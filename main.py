@@ -18,17 +18,23 @@ async def crear_bot(request: Request):
     }
 
     payload = {
-        "ownerId": RENDER_OWNER_ID,
         "serviceDetails": {
             "type": "web_service",
-            "repo": repo_url,
-            "branch": "main",
+            "env": "python",
+            "region": "oregon",
             "buildCommand": "pip install -r requirements.txt",
-            "startCommand": "python main.py"
+            "startCommand": "python main.py",
+            "repo": repo_url,
+            "branch": "main"
         },
+        "autoDeploy": True,
         "name": nombre,
-        "plan": "free"
+        "plan": "free",
+        "ownerId": RENDER_OWNER_ID
     }
 
     r = requests.post("https://api.render.com/v1/services", headers=headers, json=payload)
-    return {"status": r.status_code, "response": r.json()}
+    try:
+        return {"status": r.status_code, "response": r.json()}
+    except:
+        return {"status": r.status_code, "raw_response": r.text}
