@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-import requests, os
+import requests, os, json
 
 app = FastAPI()
 
@@ -17,26 +17,29 @@ async def crear_bot(request: Request):
         "Content-Type": "application/json"
     }
 
+    # ⚙️ payload corregido según API Render 2025
     payload = {
-        "ownerId": RENDER_OWNER_ID,
-        "name": nombre,
-        "serviceDetails": {
+        "service": {
+            "ownerId": RENDER_OWNER_ID,
             "type": "web_service",
-            "env": "python",
+            "name": nombre,
+            "plan": "free",
             "repo": repo_url,
             "branch": "main",
+            "env": "python",
+            "region": "oregon",
             "buildCommand": "pip install -r requirements.txt",
             "startCommand": "python main.py",
             "autoDeploy": True
-        },
-        "plan": "free"
+        }
     }
 
-    r = requests.post("https://api.render.com/v1/services", headers=headers, json=payload)
-
     try:
-        response_json = r.json()
-    except:
-        response_json = {"text": r.text}
-
-    return {"status": r.status_code, "response": response_json}
+        r = requests.post(
+            "https://api.render.com/v1/services",
+            headers=headers,
+            data=json.dumps(payload)
+        )
+        return {"status": r.status_code, "response": r.json()}
+    except Exception as e:
+        return {"error": str(e)}
