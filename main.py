@@ -17,29 +17,32 @@ async def crear_bot(request: Request):
         "Content-Type": "application/json"
     }
 
-    # ⚙️ payload corregido según API Render 2025
+    # 💥 payload corregido: ownerId en el nivel raíz
     payload = {
-        "service": {
-            "ownerId": RENDER_OWNER_ID,
-            "type": "web_service",
-            "name": nombre,
-            "plan": "free",
-            "repo": repo_url,
-            "branch": "main",
+        "ownerId": RENDER_OWNER_ID,
+        "name": nombre,
+        "type": "web_service",
+        "plan": "free",
+        "autoDeploy": True,
+        "serviceDetails": {
             "env": "python",
             "region": "oregon",
+            "branch": "main",
+            "repo": repo_url,
             "buildCommand": "pip install -r requirements.txt",
-            "startCommand": "python main.py",
-            "autoDeploy": True
+            "startCommand": "python main.py"
         }
     }
 
+    r = requests.post(
+        "https://api.render.com/v1/services",
+        headers=headers,
+        data=json.dumps(payload)
+    )
+
     try:
-        r = requests.post(
-            "https://api.render.com/v1/services",
-            headers=headers,
-            data=json.dumps(payload)
-        )
-        return {"status": r.status_code, "response": r.json()}
-    except Exception as e:
-        return {"error": str(e)}
+        response_json = r.json()
+    except Exception:
+        response_json = {"raw": r.text}
+
+    return {"status": r.status_code, "response": response_json}
