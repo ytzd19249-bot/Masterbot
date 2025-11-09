@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-import requests, os, json
+import requests, os
 
 app = FastAPI()
 
@@ -9,21 +9,20 @@ RENDER_OWNER_ID = os.getenv("RENDER_OWNER_ID")
 @app.post("/crear_bot")
 async def crear_bot(request: Request):
     data = await request.json()
-    nombre = data.get("nombre")
-    repo_url = data.get("repo_url")
+    nombre = data["nombre"]
+    repo_url = data["repo_url"]
 
     headers = {
         "Authorization": f"Bearer {RENDER_API_KEY}",
         "Content-Type": "application/json"
     }
 
-    # 💥 payload corregido: ownerId en el nivel raíz
+    # JSON plano, sin anidar nada raro
     payload = {
         "ownerId": RENDER_OWNER_ID,
         "name": nombre,
         "type": "web_service",
         "plan": "free",
-        "autoDeploy": True,
         "serviceDetails": {
             "env": "python",
             "region": "oregon",
@@ -31,18 +30,17 @@ async def crear_bot(request: Request):
             "repo": repo_url,
             "buildCommand": "pip install -r requirements.txt",
             "startCommand": "python main.py"
-        }
+        },
+        "autoDeploy": True
     }
 
     r = requests.post(
         "https://api.render.com/v1/services",
         headers=headers,
-        data=json.dumps(payload)
+        json=payload      # 👈 usa el parámetro json correcto
     )
 
-    try:
-        response_json = r.json()
-    except Exception:
-        response_json = {"raw": r.text}
-
-    return {"status": r.status_code, "response": response_json}
+    return {
+        "status": r.status_code,
+        "text": r.text
+    }
